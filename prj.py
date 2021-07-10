@@ -68,6 +68,7 @@ while customer_count <= customer_limit:
                 reception_client = reception_q[i].pop(0)
                 break
 
+    # queues service :
     for i in range(len(servers)):
         if len(servers[i]) > 0:
             for j in range(len(servers[i])):
@@ -85,7 +86,9 @@ while customer_count <= customer_limit:
                     servers[i].append((service_time, time, queues[i][k].pop(0)))
                     if idle_servers[i] == 0:
                         break
-        
+                        
+    time += 1
+
 
 
 
