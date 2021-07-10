@@ -4,9 +4,12 @@ import math
 n, landa, mioo, alpha = map(float, input().split(","))
 n = int(n)
 operatorMioos = []
-
+servers = [[]] * n
+idle_servers = []
 for i in range(n):
-    operatorMioos.append(float(input()))
+    mioos = ([float(i) for i in input().split(',')]
+    idle_servers.append(len(mioos))
+    operatorMioos.append(sorted(mioos))
 
 reception_q = [[]] * 5
 queues = [[[]] * 5] * n
@@ -52,13 +55,44 @@ while customer_count <= customer_limit:
             reception_q[4].append(c)
 
     # reception service:
-    if reception_client == None:
-        reception_service_time = math.ceil(np.random.exponential(1/mioo))  # next service time
-    else:
+    if reception_client != None
         reception_service_time -= 1
         if reception_service_time == 0:
+            r = np.random.uniform()
+            queues[r // (1/n)][reception_client.priority].append(reception_client)
+            reception_client = None
+    if reception_client == None:
+        for i in reversed(range(5)):
+            if len(reception_q[i]) > 0:
+                reception_service_time = math.ceil(np.random.exponential(1/mioo))  # next service time
+                reception_client = reception_q[i].pop(0)
+                break
 
-            //# TODO: add costumer to second queue
+    for i in range(len(servers)):
+        if len(servers[i]) > 0:
+            for j in range(len(servers[i])):
+                servers[i][j][0] -= 1
+                if servers[i][j][0] == 0:
+                    servers[i].pop(j)
+                    idle_servers[i] += 1
+
+    for i in range(len(servers)):
+        if idle_servers[i] > 0:
+            for k in reversed(range(5)):
+                if len(queues[i][k]) > 0:
+                    idle_servers[i] -= 1
+                    service_time = math.ceil(np.random.exponential(1/operatorMioos[i][idle_servers[i]]))
+                    servers[i].append((service_time, time, queues[i][k].pop(0)))
+                    if idle_servers[i] == 0:
+                        break
+        
+
+
+
+
+
+
+
 
 
 
