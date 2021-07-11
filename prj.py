@@ -1,18 +1,27 @@
 import numpy as np
 import math
 
+class Costumer:
+    def __init__(self, priority, arrivalTime, enduranceTime):
+        self.priority = priority
+        self.arrivalTime = arrivalTime
+        self.enduranceTime = enduranceTime
+
+    def __str__(self):
+        return str(self.priority) + '\t' + str(self.arrivalTime)
+
 n, landa, mioo, alpha = map(float, input().split(","))
 n = int(n)
 operatorMioos = []
-servers = [[]] * n
+servers = [[] for i in range(n)]
 idle_servers = []
 for i in range(n):
-    mioos = ([float(i) for i in input().split(',')]
+    mioos = [float(i) for i in input().split(',')]
     idle_servers.append(len(mioos))
     operatorMioos.append(sorted(mioos))
 
-reception_q = [[]] * 5
-queues = [[[]] * 5] * n
+reception_q = [[] for i in range(5)]
+queues = [[[] for i in range(5)]for j in range(n)]
 customer_count = 0
 time = 0
 
@@ -27,7 +36,7 @@ queues_len = [0] * 5
 reception_client = None  # the costomer who is geting served
 reception_service_time = 0
 
-customer_limit = 10000000
+customer_limit = 1000000
 
 while customer_count <= customer_limit:
 
@@ -38,28 +47,23 @@ while customer_count <= customer_limit:
     for i in range(a):
         r = np.random.uniform()  # for customer priority
         w = np.random.exponential(alpha)  # amount of time that costumer get tired
-        c =  Customer(4,time, w)  # new costumer
         if r <= 0.5:
-            c.priority = 0
-            reception_q[0].append(c)
+            reception_q[0].append(Costumer(0,time, w))
         elif r <= 0.7:
-            c.priority = 1
-            reception_q[1].append(c)
+            reception_q[1].append(Costumer(1,time, w))
         elif r <= 0.85:
-            c.priority = 2
-            reception_q[2].append(c)
+            reception_q[2].append(Costumer(2,time, w))
         elif r <= 0.95:
-            c.priority = 3
-            reception_q[3].append(c)
+            reception_q[3].append(Costumer(3,time, w))
         else:
-            reception_q[4].append(c)
+            reception_q[4].append(Costumer(4,time, w))
 
     # reception service:
-    if reception_client != None
+    if reception_client != None:
         reception_service_time -= 1
         if reception_service_time == 0:
             r = np.random.uniform()
-            queues[r // (1/n)][reception_client.priority].append(reception_client)
+            queues[int(r // (1/n))][reception_client.priority].append(reception_client)
             reception_client = None
     if reception_client == None:
         for i in reversed(range(5)):
@@ -69,15 +73,15 @@ while customer_count <= customer_limit:
                 break
 
     # queues service :
-    for i in range(len(servers)):
+    for i in range(n):
         if len(servers[i]) > 0:
-            for j in range(len(servers[i])):
+            for j in reversed(range(len(servers[i]))):
                 servers[i][j][0] -= 1
                 if servers[i][j][0] == 0:
                     servers[i].pop(j)
                     idle_servers[i] += 1
 
-    for i in range(len(servers)):
+    for i in range(n):
         if idle_servers[i] > 0:
             for k in reversed(range(5)):
                 if len(queues[i][k]) > 0:
@@ -86,22 +90,5 @@ while customer_count <= customer_limit:
                     servers[i].append((service_time, time, queues[i][k].pop(0)))
                     if idle_servers[i] == 0:
                         break
-                        
+
     time += 1
-
-
-
-
-
-
-
-
-
-
-
-
-class Customer:
-    def __init__(self, priority, arrivalTime, enduranceTime):
-        self.priority = priority
-        self.arrivalTime = arrivalTime
-        self.enduranceTime = enduranceTime
