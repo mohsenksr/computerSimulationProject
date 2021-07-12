@@ -25,6 +25,7 @@ for i in range(n):
 reception_q = [[] for i in range(5)]
 queues = [[[] for i in range(5)]for j in range(n)]
 costumer_count = 0
+costumer_prority_count = [0] * 5
 time = 0
 
 wait_time = 0
@@ -35,16 +36,20 @@ leave_count = 0
 reception_q_len = 0
 queues_len = [0] * 5
 
-reception_client = None  # the costomer who is geting served
+reception_client = None  # the costumer who is geting served
 reception_service_time = 0
 
-costumer_limit = 1000
-is_epmty = True
-while costumer_count < costumer_limit or not is_epmty:
+costumer_limit = 1000000
+is_empty = True
+while costumer_count < costumer_limit or not is_empty:
     # check for customers endurance in reception queue
     for q in reception_q:
         for costumer in reversed(q):
             if time - costumer.arrivalTime > costumer.enduranceTime:
+                spent_time += time - costumer.arrivalTime
+                priority_spent_time[costumer.priority] += time - costumer.arrivalTime
+                wait_time += time - costumer.arrivalTime
+                priority_wait_time[costumer.priority] += time - costumer.arrivalTime
                 leave_count += 1
                 q.remove(costumer)
 
@@ -53,6 +58,10 @@ while costumer_count < costumer_limit or not is_epmty:
         for q in i:
             for costumer in reversed(q):
                 if time - costumer.arrivalTime > costumer.enduranceTime:
+                    spent_time += time - costumer.arrivalTime
+                    priority_spent_time[costumer.priority] += time - costumer.arrivalTime
+                    wait_time += time - costumer.arrivalTime
+                    priority_wait_time[costumer.priority] += time - costumer.arrivalTime
                     leave_count += 1
                     q.remove(costumer)
 
@@ -60,13 +69,17 @@ while costumer_count < costumer_limit or not is_epmty:
     for i in servers:
         for costumer in reversed(i):
             if time - costumer[1].arrivalTime > costumer[1].enduranceTime:
+                spent_time += time - costumer[1].arrivalTime
+                priority_spent_time[costumer[1].priority] += time - costumer[1].arrivalTime
                 leave_count += 1
                 i.remove(costumer)
 
     # check for customers endurance in reception
     if reception_client != None and time - reception_client.arrivalTime > reception_client.enduranceTime:
-        reception_client = None
+        spent_time += time - reception_client.arrivalTime
+        priority_spent_time[reception_client.priority] += time - reception_client.arrivalTime
         leave_count += 1
+        reception_client = None
 
     # Arrivals :
     # customers arrival at that time
@@ -82,14 +95,19 @@ while costumer_count < costumer_limit or not is_epmty:
             endurance = np.random.exponential(alpha)
             if priority <= 0.5:
                 reception_q[0].append(Costumer(0, time, endurance))
+                costumer_prority_count[0] += 1
             elif priority <= 0.7:
                 reception_q[1].append(Costumer(1, time, endurance))
+                costumer_prority_count[1] += 1
             elif priority <= 0.85:
                 reception_q[2].append(Costumer(2, time, endurance))
+                costumer_prority_count[2] += 1
             elif priority <= 0.95:
                 reception_q[3].append(Costumer(3, time, endurance))
+                costumer_prority_count[3] += 1
             else:
                 reception_q[4].append(Costumer(4, time, endurance))
+                costumer_prority_count[4] += 1
 
     # reception service:
     if reception_client != None:
@@ -116,9 +134,9 @@ while costumer_count < costumer_limit or not is_epmty:
             for j in reversed(range(len(servers[i]))):
                 servers[i][j][0] -= 1
                 if servers[i][j][0] == 0:
-                    costomer = servers[i].pop(j)[1]
-                    spent_time += time - costomer.arrivalTime
-                    priority_spent_time[costomer.priority] += time - costomer.arrivalTime
+                    costumer = servers[i].pop(j)[1]
+                    spent_time += time - costumer.arrivalTime
+                    priority_spent_time[costumer.priority] += time - costumer.arrivalTime
                     idle_servers[i] += 1
 
     # move from queues to servers
@@ -128,26 +146,26 @@ while costumer_count < costumer_limit or not is_epmty:
                 if len(queues[i][k]) > 0:
                     idle_servers[i] -= 1
                     service_time = math.ceil(np.random.exponential(1/operatorMioos[i][idle_servers[i]]))
-                    costomer = queues[i][k].pop(0)
-                    wait_time += time - costomer.queueArrivalTime
-                    priority_wait_time[costomer.priority] += time - costomer.queueArrivalTime
-                    servers[i].append([service_time, costomer])
+                    costumer = queues[i][k].pop(0)
+                    wait_time += time - costumer.queueArrivalTime
+                    priority_wait_time[costumer.priority] += time - costumer.queueArrivalTime
+                    servers[i].append([service_time, costumer])
                     if idle_servers[i] == 0:
                         break
 
     # check if system is empty
     for q in reception_q:
         if len(q) > 0:
-            is_epmty = False
+            is_empty = False
             break
     else:
         if reception_client != None:
-            is_epmty = False
+            is_empty = False
         else:
             for p in queues:
                 for q in p:
                     if len(q) > 0:
-                        is_epmty = False
+                        is_empty = False
                         break
                 else:
                     continue
@@ -155,12 +173,24 @@ while costumer_count < costumer_limit or not is_epmty:
             else:
                 for p in servers:
                     if len(p) > 0:
-                        is_epmty = False
+                        is_empty = False
                         break
                 else:
-                    is_epmty = True
+                    is_empty = True
 
-
+    reception_q_len += sum([len(x) for x in reception_q])
+    for i in range(n):
+        queues_len[i] += sum([len(x) for x in queues[i]])
     time += 1
 
-print(costumer_count, wait_time, leave_count, spent_time)
+print('Costumer count:\t', costumer_count)
+print('Tired costumer count:\t', leave_count)
+print('Avarage waiting time in queues:\t', wait_time / costumer_count)
+for i in range(5):
+    print('\tAvarage waiting in queues of',i,'priority costomers:\t', priority_wait_time[i] / costumer_prority_count[i])
+print('Avarage spent time in the system:\t', spent_time / costumer_count)
+for i in range(5):
+    print('\tAvarage spent time in the system of',i,'priority costomers:\t', priority_spent_time[i] / costumer_prority_count[i])
+print('Avarage reception queue length:\t', reception_q_len / time)
+for i in range(n):
+    print('\tAvarage queue',i,'length:\t', queues_len[i] / time)
