@@ -39,7 +39,7 @@ queues_len = [0] * 5
 reception_client = None  # the costumer who is geting served
 reception_service_time = 0
 
-costumer_limit = 1000000
+costumer_limit = 100000
 is_empty = True
 while costumer_count < costumer_limit or not is_empty:
     # check for customers endurance in reception queue
@@ -60,8 +60,8 @@ while costumer_count < costumer_limit or not is_empty:
                 if time - costumer.arrivalTime > costumer.enduranceTime:
                     spent_time += time - costumer.arrivalTime
                     priority_spent_time[costumer.priority] += time - costumer.arrivalTime
-                    wait_time += time - costumer.arrivalTime
-                    priority_wait_time[costumer.priority] += time - costumer.arrivalTime
+                    wait_time += time - costumer.queueArrivalTime
+                    priority_wait_time[costumer.priority] += time - costumer.queueArrivalTime
                     leave_count += 1
                     q.remove(costumer)
 
@@ -72,6 +72,7 @@ while costumer_count < costumer_limit or not is_empty:
                 spent_time += time - costumer[1].arrivalTime
                 priority_spent_time[costumer[1].priority] += time - costumer[1].arrivalTime
                 leave_count += 1
+                idle_servers[servers.index(i)] += 1
                 i.remove(costumer)
 
     # check for customers endurance in reception
@@ -123,6 +124,7 @@ while costumer_count < costumer_limit or not is_empty:
         for i in reversed(range(5)):
             if len(reception_q[i]) > 0:
                 reception_service_time = math.ceil(np.random.exponential(1/mioo))  # next service time
+
                 reception_client = reception_q[i].pop(0)
                 wait_time += time - reception_client.arrivalTime
                 priority_wait_time[reception_client.priority] += time - reception_client.arrivalTime
@@ -183,6 +185,7 @@ while costumer_count < costumer_limit or not is_empty:
         queues_len[i] += sum([len(x) for x in queues[i]])
     time += 1
 
+    
 print('Costumer count:\t', costumer_count)
 print('Tired costumer count:\t', leave_count)
 print('Avarage waiting time in queues:\t', wait_time / costumer_count)
