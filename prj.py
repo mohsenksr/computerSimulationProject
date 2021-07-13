@@ -19,8 +19,6 @@ class Customer:
         self.receptionWait = time
 
 
-
-
 n, landa, mioo, alpha = map(float, input().split(","))
 n = int(n)
 operatorMioos = []
@@ -57,7 +55,7 @@ queues_lens_array = [[0] for i in range(5)]
 reception_client = None  # the customer who is geting served
 reception_service_time = 0
 
-customer_limit = 100000
+customer_limit = 10000000
 is_empty = True
 while customer_count < customer_limit or not is_empty:
     # check for customers endurance in reception queue
@@ -84,7 +82,8 @@ while customer_count < customer_limit or not is_empty:
                     wait = time - customer.queueArrivalTime
                     wait_time += wait
                     priority_wait_time[customer.priority] += wait
-                    wait_freq[customer.priority].append(wait + customer.receptionWait)
+                    wait_freq[customer.priority].append(
+                        wait + customer.receptionWait)
                     leave_count += 1
                     q.remove(customer)
 
@@ -141,14 +140,16 @@ while customer_count < customer_limit or not is_empty:
         if reception_service_time == 0:
             q = np.random.uniform()          # choose queue number
             reception_client.queue_arrival(time)
-            queues[int(q // (1/n))][reception_client.priority].append(reception_client)
+            queues[int(q // (1/n))
+                   ][reception_client.priority].append(reception_client)
             reception_client = None
 
     # move from reception_q to reception server
     if reception_client == None:
         for i in reversed(range(5)):
             if len(reception_q[i]) > 0:
-                reception_service_time = math.ceil(np.random.exponential(1/mioo))  # next service time
+                reception_service_time = math.ceil(
+                    np.random.exponential(1/mioo))  # next service time
                 reception_client = reception_q[i].pop(0)
                 wait = time - reception_client.arrivalTime
                 wait_time += wait
@@ -175,11 +176,14 @@ while customer_count < customer_limit or not is_empty:
             for k in reversed(range(5)):
                 if len(queues[i][k]) > 0:
                     idle_servers[i] -= 1
-                    service_time = math.ceil(np.random.exponential(operatorMioos[i][idle_servers[i]]))
+                    service_time = math.ceil(np.random.exponential(
+                        operatorMioos[i][idle_servers[i]]))
                     customer = queues[i][k].pop(0)
-                    response_freq[customer.priority].append(service_time + customer.receptionService)
+                    response_freq[customer.priority].append(
+                        service_time + customer.receptionService)
                     wait = time - customer.queueArrivalTime
-                    wait_freq[customer.priority].append(wait + customer.receptionWait)
+                    wait_freq[customer.priority].append(
+                        wait + customer.receptionWait)
                     wait_time += wait
                     priority_wait_time[customer.priority] += wait
                     servers[i].append([service_time, customer])
@@ -246,8 +250,10 @@ for i in range(n):
     print('\tAvarage queue', i, 'length:\t', queues_len[i] / time)
 
 
-x = times
-y = reception_q_lens_array
+# plots
+x = [sum(times[i*100:i*100+100])/100 for i in range(len(times)//100)]
+y = [sum(reception_q_lens_array[i*100:i*100+100]) /
+     100 for i in range(len(reception_q_lens_array)//100)]
 plt.plot(x, y, label="reception queue")
 
 plt.xlabel('time')
@@ -258,14 +264,18 @@ plt.show()
 
 
 for i in range(n):
-    plt.plot(x, queues_lens_array[i], label="queue number " + str(i))
+    y = [sum(queues_lens_array[i][j*100:j*100+100]) /
+         100 for j in range(len(times)//100)]
+    plt.plot(x, y, label="queue number " + str(i))
     plt.xlabel('time')
     plt.ylabel('number')
     plt.title('length of queues in time')
     plt.legend()
     plt.show()
 
-y = customers_in_system_array
+y = [sum(customers_in_system_array[i*100:i*100+100]) /
+     100 for i in range(len(times)//100)]
+
 plt.plot(x, y, label="customers in system")
 
 plt.xlabel('time')
@@ -275,14 +285,16 @@ plt.legend()
 plt.show()
 
 for i in range(5):
-    n, bins, patches = plt.hist(wait_freq[i], max(wait_freq[i]), density=True, facecolor='g', alpha=0.75)
+    n, bins, patches = plt.hist(wait_freq[i], max(
+        wait_freq[i]), density=True, facecolor='g', alpha=0.75)
     plt.xlabel('time')
     plt.ylabel('frequency')
     plt.title('Wait time frequency of priority ' + str(i))
     plt.show()
 
 for i in range(5):
-    n, bins, patches = plt.hist(response_freq[i], max(response_freq[i]), density=True, facecolor='g', alpha=0.75)
+    n, bins, patches = plt.hist(response_freq[i], max(
+        response_freq[i]), density=True, facecolor='g', alpha=0.75)
     plt.xlabel('time')
     plt.ylabel('frequency')
     plt.title('response time frequency of priority ' + str(i))
