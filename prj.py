@@ -12,6 +12,14 @@ class Customer:
     def queue_arrival(self, time):
         self.queueArrivalTime = time
 
+    def reception_service(self, time):
+        self.receptionService = time
+
+    def reception_wait(self, time):
+        self.receptionWait = time
+
+
+
 
 n, landa, mioo, alpha = map(float, input().split(","))
 n = int(n)
@@ -28,6 +36,9 @@ queues = [[[] for i in range(5)]for j in range(n)]
 customer_count = 0
 customer_prority_count = [0] * 5
 time = 0
+
+wait_freq = [[] for i in range(5)]
+response_freq = [[] for i in range(5)]
 
 
 wait_time = 0
@@ -53,12 +64,12 @@ while customer_count < customer_limit or not is_empty:
     for q in reception_q:
         for customer in reversed(q):
             if time - customer.arrivalTime > customer.enduranceTime:
-                spent_time += time - customer.arrivalTime
-                priority_spent_time[customer.priority] += time - \
-                    customer.arrivalTime
-                wait_time += time - customer.arrivalTime
-                priority_wait_time[customer.priority] += time - \
-                    customer.arrivalTime
+                wait = time - customer.arrivalTime
+                spent_time += wait
+                priority_spent_time[customer.priority] += wait
+                wait_time += wait
+                priority_wait_time[customer.priority] += wait
+                wait_freq[customer.priority].append(wait)
                 leave_count += 1
                 q.remove(customer)
 
@@ -67,12 +78,13 @@ while customer_count < customer_limit or not is_empty:
         for q in i:
             for customer in reversed(q):
                 if time - customer.arrivalTime > customer.enduranceTime:
-                    spent_time += time - customer.arrivalTime
-                    priority_spent_time[customer.priority] += time - \
-                        customer.arrivalTime
-                    wait_time += time - customer.queueArrivalTime
-                    priority_wait_time[customer.priority] += time - \
-                        customer.queueArrivalTime
+                    spent = time - customer.arrivalTime
+                    spent_time += spent
+                    priority_spent_time[customer.priority] += spent
+                    wait = time - customer.queueArrivalTime
+                    wait_time += wait
+                    priority_wait_time[customer.priority] += wait
+                    wait_freq[customer.priority].append(wait + customer.receptionWait)
                     leave_count += 1
                     q.remove(customer)
 
@@ -129,21 +141,20 @@ while customer_count < customer_limit or not is_empty:
         if reception_service_time == 0:
             q = np.random.uniform()          # choose queue number
             reception_client.queue_arrival(time)
-            queues[int(q // (1/n))
-                   ][reception_client.priority].append(reception_client)
+            queues[int(q // (1/n))][reception_client.priority].append(reception_client)
             reception_client = None
 
     # move from reception_q to reception server
     if reception_client == None:
         for i in reversed(range(5)):
             if len(reception_q[i]) > 0:
-                reception_service_time = math.ceil(
-                    np.random.exponential(1/mioo))  # next service time
-
+                reception_service_time = math.ceil(np.random.exponential(1/mioo))  # next service time
                 reception_client = reception_q[i].pop(0)
-                wait_time += time - reception_client.arrivalTime
-                priority_wait_time[reception_client.priority] += time - \
-                    reception_client.arrivalTime
+                wait = time - reception_client.arrivalTime
+                wait_time += wait
+                priority_wait_time[reception_client.priority] += wait
+                reception_client.reception_service(reception_service_time)
+                reception_client.reception_wait(wait)
                 break
 
     # queues service :
@@ -153,9 +164,9 @@ while customer_count < customer_limit or not is_empty:
                 servers[i][j][0] -= 1
                 if servers[i][j][0] == 0:
                     customer = servers[i].pop(j)[1]
-                    spent_time += time - customer.arrivalTime
-                    priority_spent_time[customer.priority] += time - \
-                        customer.arrivalTime
+                    spent = time - customer.arrivalTime
+                    spent_time += spent
+                    priority_spent_time[customer.priority] += spent
                     idle_servers[i] += 1
 
     # move from queues to servers
@@ -164,12 +175,13 @@ while customer_count < customer_limit or not is_empty:
             for k in reversed(range(5)):
                 if len(queues[i][k]) > 0:
                     idle_servers[i] -= 1
-                    service_time = math.ceil(np.random.exponential(
-                        1/operatorMioos[i][idle_servers[i]]))
+                    service_time = math.ceil(np.random.exponential(operatorMioos[i][idle_servers[i]]))
                     customer = queues[i][k].pop(0)
-                    wait_time += time - customer.queueArrivalTime
-                    priority_wait_time[customer.priority] += time - \
-                        customer.queueArrivalTime
+                    response_freq[customer.priority].append(service_time + customer.receptionService)
+                    wait = time - customer.queueArrivalTime
+                    wait_freq[customer.priority].append(wait + customer.receptionWait)
+                    wait_time += wait
+                    priority_wait_time[customer.priority] += wait
                     servers[i].append([service_time, customer])
                     if idle_servers[i] == 0:
                         break
@@ -212,7 +224,7 @@ while customer_count < customer_limit or not is_empty:
     times.append(time)
     customer_in_system = comulative_queues_count + \
         sum([len(x) for x in servers])
-    if(reception_client != None):
+    if reception_client != None:
         customer_in_system += 1
     customers_in_system_array.append(customer_in_system)
 
@@ -261,3 +273,17 @@ plt.ylabel('number')
 plt.title('customers in system in time')
 plt.legend()
 plt.show()
+
+for i in range(5):
+    n, bins, patches = plt.hist(wait_freq[i], max(wait_freq[i]), density=True, facecolor='g', alpha=0.75)
+    plt.xlabel('time')
+    plt.ylabel('frequency')
+    plt.title('Wait time frequency of priority ' + str(i))
+    plt.show()
+
+for i in range(5):
+    n, bins, patches = plt.hist(response_freq[i], max(response_freq[i]), density=True, facecolor='g', alpha=0.75)
+    plt.xlabel('time')
+    plt.ylabel('frequency')
+    plt.title('response time frequency of priority ' + str(i))
+    plt.show()
