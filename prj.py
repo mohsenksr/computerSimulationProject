@@ -38,9 +38,9 @@ leave_count = 0
 reception_q_len = 0
 queues_len = [0] * n
 
-times = []
-reception_q_lens_array = []
-queues_lens_array = [[] * n]
+times = [0]
+reception_q_lens_array = [0]
+queues_lens_array = [[0] for i in range(5)]
 
 reception_client = None  # the costumer who is geting served
 reception_service_time = 0
@@ -136,11 +136,13 @@ while costumer_count < costumer_limit or not is_empty:
     if reception_client == None:
         for i in reversed(range(5)):
             if len(reception_q[i]) > 0:
-                reception_service_time = math.ceil(np.random.exponential(1/mioo))  # next service time
+                reception_service_time = math.ceil(
+                    np.random.exponential(1/mioo))  # next service time
 
                 reception_client = reception_q[i].pop(0)
                 wait_time += time - reception_client.arrivalTime
-                priority_wait_time[reception_client.priority] += time - reception_client.arrivalTime
+                priority_wait_time[reception_client.priority] += time - \
+                    reception_client.arrivalTime
                 break
 
     # queues service :
@@ -151,7 +153,8 @@ while costumer_count < costumer_limit or not is_empty:
                 if servers[i][j][0] == 0:
                     costumer = servers[i].pop(j)[1]
                     spent_time += time - costumer.arrivalTime
-                    priority_spent_time[costumer.priority] += time - costumer.arrivalTime
+                    priority_spent_time[costumer.priority] += time - \
+                        costumer.arrivalTime
                     idle_servers[i] += 1
 
     # move from queues to servers
@@ -160,10 +163,12 @@ while costumer_count < costumer_limit or not is_empty:
             for k in reversed(range(5)):
                 if len(queues[i][k]) > 0:
                     idle_servers[i] -= 1
-                    service_time = math.ceil(np.random.exponential(1/operatorMioos[i][idle_servers[i]]))
+                    service_time = math.ceil(np.random.exponential(
+                        1/operatorMioos[i][idle_servers[i]]))
                     costumer = queues[i][k].pop(0)
                     wait_time += time - costumer.queueArrivalTime
-                    priority_wait_time[costumer.priority] += time - costumer.queueArrivalTime
+                    priority_wait_time[costumer.priority] += time - \
+                        costumer.queueArrivalTime
                     servers[i].append([service_time, costumer])
                     if idle_servers[i] == 0:
                         break
@@ -199,12 +204,10 @@ while costumer_count < costumer_limit or not is_empty:
     for i in range(n):
         q_len = sum([len(x) for x in queues[i]])
         queues_len[i] += q_len
-        queues_lens_array.append(q_len)
+        queues_lens_array[i].append(q_len)
     times.append(time)
 
     time += 1
-
-
 
 
 print('Costumer count:\t', costumer_count)
@@ -226,11 +229,17 @@ x = times
 y = reception_q_lens_array
 plt.plot(x, y, label="reception queue")
 
-for i in range(n):
-    plt.plot(x, queues_lens_array[i], label="queue number " + str(i))
-
 plt.xlabel('time')
 plt.ylabel('number')
 plt.title('length of queues in time')
 plt.legend()
 plt.show()
+
+
+for i in range(n):
+    plt.plot(x, queues_lens_array[i], label="queue number " + str(i))
+    plt.xlabel('time')
+    plt.ylabel('number')
+    plt.title('length of queues in time')
+    plt.legend()
+    plt.show()
